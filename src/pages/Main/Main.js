@@ -2,8 +2,10 @@ import React from 'react';
 import { withRouter } from 'react-router-dom';
 import MainSection from './Components/MainSection/MainSection';
 import API_URLS from '../../config';
+import { throttling } from '../../utils/throttling';
 import './Main.scss';
 
+const throttler = throttling();
 class Main extends React.Component {
   constructor() {
     super();
@@ -20,10 +22,7 @@ class Main extends React.Component {
       .then(res => res.json())
       .then(movieList => {
         this.setState({
-          movieInformationList: [
-            ...this.state.movieInformationList,
-            movieList.MESSAGE[0],
-          ],
+          movieInformationList: [movieList.MESSAGE[0]],
         });
       });
   };
@@ -68,11 +67,15 @@ class Main extends React.Component {
   };
 
   componentDidMount() {
-    this.getMovieListData(API_URLS['MAIN_BOX_OFFICE'])
+    this.getMovieListData('data/mainMovie.json')
       .then(() => this.getMovieListData(API_URLS['MAIN_NETFLIX']))
       .then(() => this.getMovieListData(API_URLS['MAIN_YOUNGCHA']))
       .then(() => this.getMockData());
-    window.addEventListener('scroll', this.infiniteScroll);
+    window.addEventListener('scroll', () => {
+      throttler.throttle(() => {
+        this.infiniteScroll();
+      }, 500);
+    });
   }
 
   componentWillUnmount() {
@@ -80,7 +83,6 @@ class Main extends React.Component {
   }
 
   render() {
-    console.log('무비리스트', this.state.movieInformationList);
     return (
       <>
         {this.state.movieInformationList && (
